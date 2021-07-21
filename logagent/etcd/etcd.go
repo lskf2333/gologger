@@ -3,17 +3,14 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"goLoggerTest/logagent/common"
 	"time"
 )
 
 //etcd 相关操作
-
-type collectEntry struct {
-	Path  string `json:"path"`
-	Topic string `json:"topic"`
-}
 
 var (
 	client *clientv3.Client
@@ -32,7 +29,7 @@ func Init(address []string) (err error) {
 }
 
 //拉取日志收集配置项的函数
-func GetConf(key string) {
+func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer cancel()
 	resp, err := client.Get(ctx, key)
@@ -44,7 +41,12 @@ func GetConf(key string) {
 		logrus.Warningf("get len:0 conf from etcd by key:%s \n", key)
 		return
 	}
-	ret :=resp.Kvs[0]
-	var
-	json.Unmarshal(ret.Value,) //json格式字符串
+	ret := resp.Kvs[0]
+	fmt.Println(ret.Value)
+	err = json.Unmarshal(ret.Value, &collectEntryList)
+	if err != nil {
+		logrus.Errorf("json unmarshal failed,err:%v", err)
+		return
+	}
+	return
 }

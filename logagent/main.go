@@ -1,14 +1,11 @@
 package main
 
 import (
-	"github.com/Shopify/sarama"
 	"github.com/sirupsen/logrus"
 	"goLoggerTest/logagent/etcd"
 	"goLoggerTest/logagent/kafka"
 	"goLoggerTest/logagent/tailfile"
 	"gopkg.in/ini.v1"
-	"strings"
-	"time"
 )
 
 type Config struct {
@@ -28,35 +25,15 @@ type CollectConfig struct {
 }
 
 type EtcdConfig struct {
-	Address string `ini:"address"`
+	Address    string `ini:"address"`
+	CollectKey string `ini:"collect_key"`
 }
 
 //日志收集的客户端
 //类似的开源项目还有filebeat
 //手机指定目录下的日志文件，发送到kafka中
-
-func run() (err error) {
-	//循环读数据
-	for {
-		line, ok := <-tailfile.TailObj.Lines //chan tail.Line
-		if !ok {
-			logrus.Warn("tail file close reope,filename:%s\n", tailfile.TailObj.Filename)
-			time.Sleep(time.Second)
-			continue
-		}
-		//如果是空行，就跳过
-		if len(strings.TrimSpace(line.Text)) == 0 {
-			logrus.Info("出现空行了，跳过")
-			continue
-		}
-		//利用通道将同步的代码改为异步的
-		//把都出来的一行日志保诚成Kafka里面的msg类型，丢到通道中
-		msg := &sarama.ProducerMessage{}
-		msg.Topic = "web_log"
-		msg.Value = sarama.StringEncoder(line.Text)
-		kafka.ToMsgChan(msg)
-	}
-	return
+func run() {
+	select {}
 }
 
 func main() {
@@ -92,19 +69,22 @@ func main() {
 		return
 	}
 	logrus.Info("init etcd success!")
-	//从etcd中拉去要手机日志的配置项
+	//从etcd中拉去要收集日志的配置项
+	allConf, err := etcd.GetConf(configObj.EtcdConfig.CollectKey)
+	if err != nil {
+		logrus.Error("get etcd conf failed,err:%v", err)
+		return
+	}
+	//for _, v := range allConf {
+	//	fmt.Printf("%v", *v)
+	//}
 
 	// 2.根据配置中的日志路径初始化tail包
-	err = tailfile.Init(configObj.CollectConfig.LogFilePath)
+	err = tailfile.Init(allConf) //把从etcd 中获取的配置项传到init中
 	if err != nil {
-		logrus.Error("init tailfile failed,err:%v", err)
+		logrus.Error("init tailFile failed,err:%v", err)
 		return
 	}
-	logrus.Info("init tailfile success!")
-	// 3.把日志用过sarama发送kafka
-	err = run()
-	if err != nil {
-		logrus.Error("run failed,err:%v", err)
-		return
-	}
+	logrus.Info("init tailFile success!")
+	run()
 }

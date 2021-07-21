@@ -21,7 +21,8 @@ func main() {
 
 	//put 存值
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	_, err = cli.Put(ctx, "s4", "xixi")
+	str := `[{"path":"d:/logs/s4.log","topic":"s4_log"},{"path":"d:/logs/web.log","topic":"web_log"}]`
+	_, err = cli.Put(ctx, "collect_log_conf", str)
 	cancel()
 	if err != nil {
 		fmt.Printf("put to etcd failed, err:%v\n", err)
@@ -30,7 +31,7 @@ func main() {
 
 	//get 取值
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
-	gr, err := cli.Get(ctx, "s4")
+	gr, err := cli.Get(ctx, "collect_log_conf")
 	if err != nil {
 		fmt.Printf("get from etcd failed, err:%v\n", err)
 		return
