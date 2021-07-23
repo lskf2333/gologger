@@ -75,9 +75,8 @@ func main() {
 		logrus.Error("get etcd conf failed,err:%v", err)
 		return
 	}
-	//for _, v := range allConf {
-	//	fmt.Printf("%v", *v)
-	//}
+	//开一个协程去监听etcd中的configObj.EtcdConfig.CollectKey的变化
+	go etcd.WatchConf(configObj.EtcdConfig.CollectKey)
 
 	// 2.根据配置中的日志路径初始化tail包
 	err = tailfile.Init(allConf) //把从etcd 中获取的配置项传到init中

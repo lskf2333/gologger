@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"goLoggerTest/logagent/common"
+	"goLoggerTest/logagent/tailfile"
 	"time"
 )
 
@@ -49,4 +50,25 @@ func GetConf(key string) (collectEntryList []common.CollectEntry, err error) {
 		return
 	}
 	return
+}
+
+//监控etcd中日志收集项的配置变化
+func WatchConf(key string) {
+	for {
+		watchChan := client.Watch(context.Background(), key)
+		var newConf []common.CollectEntry
+		for wresp := range watchChan {
+			logrus.Info("get new conf etcd!")
+			for _, evt := range wresp.Events {
+				fmt.Printf("type:%s key:%s value:%s\n", evt.Type, evt.Kv.Key, evt.Kv.Value)
+				err := json.Unmarshal(evt.Kv.Value, &newConf)
+				if err != nil {
+					logrus.Errorf("json unmarshal new conf failed, err:%v", err)
+					continue
+				}
+				//告诉tailfile 这个模块启用行的配置
+				tailfile.SendNewConf(newConf)
+			}
+		}
+	}
 }

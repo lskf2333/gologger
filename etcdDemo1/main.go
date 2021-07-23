@@ -21,7 +21,9 @@ func main() {
 
 	//put 存值
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	str := `[{"path":"d:/logs/s4.log","topic":"s4_log"},{"path":"d:/logs/web.log","topic":"web_log"}]`
+	//str := `[{"path":"d:/logs/s4.log","topic":"s4_log"},{"path":"d:/logs/web.log","topic":"web_log"}]`
+	//str := `[{"path":"d:/logs/s4.log","topic":"s4_log"},{"path":"d:/logs/web.log","topic":"web_log"},{"path":"d:/logs/xixi.log","topic":"xixi_log"}]`
+	str := `[{"path":"d:/logs/s4.log","topic":"s4_log"},{"path":"d:/logs/web.log","topic":"web_log"},{"path":"d:/logs/xixi.log","topic":"xixi_log"},{"path":"d:/logs/haha.log","topic":"haha_log"}]`
 	_, err = cli.Put(ctx, "collect_log_conf", str)
 	cancel()
 	if err != nil {
